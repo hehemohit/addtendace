@@ -5,6 +5,16 @@ import { formatDate, formatTime, formatTime24, formatDateTime, formatDuration } 
 import SessionTimer from '../components/SessionTimer';
 import SessionInfo from '../components/SessionInfo';
 import UserSessionsList from '../components/UserSessionsList';
+import RequestManagement from '../components/RequestManagement';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const AdminDashboard = () => {
   const { user, logout, loginTime } = useAuth();
@@ -151,417 +161,401 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Admin Dashboard
               </h1>
-              <p className="text-gray-600">Welcome, {user?.name}</p>
+              <p className="text-muted-foreground">Welcome back, {user?.name}</p>
             </div>
             <div className="flex items-center space-x-4">
               <SessionTimer loginTime={loginTime} />
-              <button
+              <Button
                 onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                variant="destructive"
+                size="sm"
               >
                 Logout
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', name: 'Today Overview' },
-              { id: 'sessions', name: 'Live Sessions' },
-              { id: 'employees', name: 'Employee Management' },
-              { id: 'attendance', name: 'Attendance Records' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  if (tab.id === 'attendance') {
-                    fetchAttendanceRecords();
-                  }
-                }}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </nav>
-        </div>
+        <Tabs value={activeTab} onValueChange={(value) => {
+          setActiveTab(value);
+          if (value === 'attendance') {
+            fetchAttendanceRecords();
+          }
+        }} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Today Overview</TabsTrigger>
+            <TabsTrigger value="sessions">Live Sessions</TabsTrigger>
+            <TabsTrigger value="employees">Employee Management</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance Records</TabsTrigger>
+            <TabsTrigger value="requests">Request Management</TabsTrigger>
+          </TabsList>
 
-        {/* Today Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <TabsContent value="overview" className="space-y-6">
             <SessionInfo loginTime={loginTime} user={user} />
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Today's Attendance Overview</h2>
-              <button
-                onClick={fetchTodayOverview}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Refresh
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Loading...</p>
-              </div>
-            ) : (
-              <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                <ul className="divide-y divide-gray-200">
-                  {todayOverview.map((item) => (
-                    <li key={item.employee.id} className="px-6 py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <span className="text-sm font-medium text-gray-700">
-                                {item.employee.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {item.employee.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {item.employee.department} • {item.employee.position}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm text-gray-900">
-                            {item.attendance.clockIn ? formatTime24(item.attendance.clockIn) : 'Not logged in'}
-                          </div>
-                          <div className="text-sm text-gray-900">
-                            {item.attendance.clockOut ? formatTime24(item.attendance.clockOut) : '-'}
-                          </div>
-                          <div className="text-sm text-gray-900">
-                            {formatDuration(item.attendance.totalHours)}
-                          </div>
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(item.attendance.status)}`}>
-                            {formatStatus(item.attendance.status)}
-                          </span>
-                          {item.attendance.clockIn && (
-                            <button
-                              onClick={() => openEditAttendance(item)}
-                              className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                            >
-                              Edit
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Live Sessions Tab */}
-        {activeTab === 'sessions' && (
-          <div className="space-y-6">
-            <UserSessionsList />
-          </div>
-        )}
-
-        {/* Employee Management Tab */}
-        {activeTab === 'employees' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Employee Management</h2>
-              <button
-                onClick={() => setShowCreateEmployee(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Add Employee
-              </button>
-            </div>
-
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
-              <ul className="divide-y divide-gray-200">
-                {employees.map((employee) => (
-                  <li key={employee._id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {employee.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {employee.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {employee.email}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {employee.department} • {employee.position}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          employee.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {employee.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Attendance Records Tab */}
-        {activeTab === 'attendance' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Attendance Records</h2>
-            
-            {loading ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Loading...</p>
-              </div>
-            ) : (
-              <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Employee
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Clock In
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Clock Out
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total Hours
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {attendanceRecords.map((record) => (
-                        <tr key={record._id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {record.employee.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(record.date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatTime24(record.clockIn)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {record.clockOut ? formatTime24(record.clockOut) : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDuration(record.totalHours)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                              {formatStatus(record.status)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => openEditAttendance(record)}
-                              className="text-indigo-600 hover:text-indigo-900"
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Today's Attendance Overview</CardTitle>
+                    <CardDescription>Monitor employee attendance for today</CardDescription>
+                  </div>
+                  <Button onClick={fetchTodayOverview} variant="outline" size="sm">
+                    Refresh
+                  </Button>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading...</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Clock In</TableHead>
+                          <TableHead>Clock Out</TableHead>
+                          <TableHead>Total Hours</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {todayOverview.map((item) => (
+                          <TableRow key={item.employee.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                    {item.employee.name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium">{item.employee.name}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {item.employee.department} • {item.employee.position}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {item.attendance.clockIn ? formatTime24(item.attendance.clockIn) : 'Not logged in'}
+                            </TableCell>
+                            <TableCell>
+                              {item.attendance.clockOut ? formatTime24(item.attendance.clockOut) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {formatDuration(item.attendance.totalHours)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={item.attendance.status === 'present' ? 'default' : 'secondary'}>
+                                {formatStatus(item.attendance.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {item.attendance.clockIn && (
+                                <Button
+                                  onClick={() => openEditAttendance(item)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Edit
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sessions" className="space-y-6">
+            <UserSessionsList />
+          </TabsContent>
+
+          <TabsContent value="employees" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Employee Management</CardTitle>
+                    <CardDescription>Manage your team members</CardDescription>
+                  </div>
+                  <Button
+                    onClick={() => setShowCreateEmployee(true)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Add Employee
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {employees.map((employee) => (
+                        <TableRow key={employee._id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                  {employee.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="font-medium">{employee.name}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{employee.email}</TableCell>
+                          <TableCell>{employee.department}</TableCell>
+                          <TableCell>{employee.position}</TableCell>
+                          <TableCell>
+                            <Badge variant={employee.isActive ? 'default' : 'secondary'}>
+                              {employee.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="attendance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance Records</CardTitle>
+                <CardDescription>View and manage attendance history</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading...</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Clock In</TableHead>
+                          <TableHead>Clock Out</TableHead>
+                          <TableHead>Total Hours</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {attendanceRecords.map((record) => (
+                          <TableRow key={record._id}>
+                            <TableCell className="font-medium">{record.employee.name}</TableCell>
+                            <TableCell>{formatDate(record.date)}</TableCell>
+                            <TableCell>{formatTime24(record.clockIn)}</TableCell>
+                            <TableCell>{record.clockOut ? formatTime24(record.clockOut) : '-'}</TableCell>
+                            <TableCell>{formatDuration(record.totalHours)}</TableCell>
+                            <TableCell>
+                              <Badge variant={record.status === 'present' ? 'default' : 'secondary'}>
+                                {formatStatus(record.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                onClick={() => openEditAttendance(record)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                Edit
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="requests" className="space-y-6">
+            <RequestManagement />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create Employee Modal */}
-      {showCreateEmployee && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Employee</h3>
-              <form onSubmit={handleCreateEmployee} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={employeeForm.name}
-                    onChange={(e) => setEmployeeForm({...employeeForm, name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={employeeForm.email}
-                    onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={employeeForm.password}
-                    onChange={(e) => setEmployeeForm({...employeeForm, password: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Department</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={employeeForm.department}
-                    onChange={(e) => setEmployeeForm({...employeeForm, department: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Position</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={employeeForm.position}
-                    onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Create Employee
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateEmployee(false)}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+      <Dialog open={showCreateEmployee} onOpenChange={setShowCreateEmployee}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Employee</DialogTitle>
+            <DialogDescription>
+              Add a new employee to your team. Fill in the details below.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateEmployee} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                required
+                value={employeeForm.name}
+                onChange={(e) => setEmployeeForm({...employeeForm, name: e.target.value})}
+              />
             </div>
-          </div>
-        </div>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={employeeForm.email}
+                onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={employeeForm.password}
+                onChange={(e) => setEmployeeForm({...employeeForm, password: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                type="text"
+                value={employeeForm.department}
+                onChange={(e) => setEmployeeForm({...employeeForm, department: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="position">Position</Label>
+              <Input
+                id="position"
+                type="text"
+                value={employeeForm.position}
+                onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
+              />
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+                Create Employee
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCreateEmployee(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Attendance Modal */}
-      {showEditAttendance && selectedAttendance && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Edit Attendance - {selectedAttendance.employee.name}
-              </h3>
-              <form onSubmit={handleEditAttendance} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Clock In</label>
-                  <input
-                    type="datetime-local"
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={attendanceForm.clockIn}
-                    onChange={(e) => setAttendanceForm({...attendanceForm, clockIn: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Clock Out</label>
-                  <input
-                    type="datetime-local"
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={attendanceForm.clockOut}
-                    onChange={(e) => setAttendanceForm({...attendanceForm, clockOut: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={attendanceForm.status}
-                    onChange={(e) => setAttendanceForm({...attendanceForm, status: e.target.value})}
-                  >
-                    <option value="present">Present</option>
-                    <option value="absent">Absent</option>
-                    <option value="late">Late</option>
-                    <option value="half-day">Half Day</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Notes</label>
-                  <textarea
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                    rows="3"
-                    value={attendanceForm.notes}
-                    onChange={(e) => setAttendanceForm({...attendanceForm, notes: e.target.value})}
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Update Attendance
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditAttendance(false)}
-                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+      <Dialog open={showEditAttendance} onOpenChange={setShowEditAttendance}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              Edit Attendance - {selectedAttendance?.employee?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Update attendance details for this employee.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditAttendance} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="clockIn">Clock In</Label>
+              <Input
+                id="clockIn"
+                type="datetime-local"
+                value={attendanceForm.clockIn}
+                onChange={(e) => setAttendanceForm({...attendanceForm, clockIn: e.target.value})}
+              />
             </div>
-          </div>
-        </div>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="clockOut">Clock Out</Label>
+              <Input
+                id="clockOut"
+                type="datetime-local"
+                value={attendanceForm.clockOut}
+                onChange={(e) => setAttendanceForm({...attendanceForm, clockOut: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={attendanceForm.status}
+                onChange={(e) => setAttendanceForm({...attendanceForm, status: e.target.value})}
+              >
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+                <option value="half-day">Half Day</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <textarea
+                id="notes"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                rows="3"
+                value={attendanceForm.notes}
+                onChange={(e) => setAttendanceForm({...attendanceForm, notes: e.target.value})}
+              />
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button type="submit" className="flex-1">
+                Update Attendance
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditAttendance(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

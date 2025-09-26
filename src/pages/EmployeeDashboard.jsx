@@ -6,7 +6,15 @@ import AttendanceCalendar from '../components/AttendanceCalendar';
 import LiveStatusIndicator from '../components/LiveStatusIndicator';
 import SessionTimer from '../components/SessionTimer';
 import SessionInfo from '../components/SessionInfo';
+import RequestForm from '../components/RequestForm';
+import MyRequests from '../components/MyRequests';
 import useRealTimeAttendance from '../hooks/useRealTimeAttendance';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const EmployeeDashboard = () => {
   const { user, logout, updateAttendance, loginTime } = useAuth();
@@ -16,6 +24,7 @@ const EmployeeDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showRequestForm, setShowRequestForm] = useState(false);
 
   // Real-time attendance hook
   const { 
@@ -94,214 +103,228 @@ const EmployeeDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Welcome, {user?.name}
-              </h1>
-              <p className="text-gray-600">{user?.department} • {user?.position}</p>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
+                  {user?.name?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Welcome, {user?.name}
+                </h1>
+                <p className="text-muted-foreground">{user?.department} • {user?.position}</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <SessionTimer loginTime={loginTime} />
-              <button
+              <Button
                 onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                variant="destructive"
+                size="sm"
               >
                 Logout
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'overview', name: 'Live Overview' },
-              { id: 'calendar', name: 'Attendance Calendar' },
-              { id: 'history', name: 'History' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </nav>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Live Overview</TabsTrigger>
+            <TabsTrigger value="calendar">Attendance Calendar</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="requests">Requests</TabsTrigger>
+          </TabsList>
 
-        {/* Live Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <TabsContent value="overview" className="space-y-6">
             <SessionInfo loginTime={loginTime} user={user} />
             <LiveStatusIndicator 
               attendance={realTimeAttendance} 
               loading={realTimeLoading} 
             />
             
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Today's Summary</h2>
-                <button
-                  onClick={refreshAttendance}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                >
-                  Refresh
-                </button>
-              </div>
-              {realTimeAttendance ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Clock In</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatTime24(realTimeAttendance.clockIn)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(realTimeAttendance.clockIn)}
-                    </p>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Today's Summary</CardTitle>
+                    <CardDescription>Your attendance overview for today</CardDescription>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Clock Out</p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {realTimeAttendance.clockOut ? formatTime24(realTimeAttendance.clockOut) : 'Not logged out'}
-                    </p>
-                    {realTimeAttendance.clockOut && (
-                      <p className="text-xs text-gray-500">
-                        {formatDate(realTimeAttendance.clockOut)}
-                      </p>
-                    )}
+                  <Button
+                    onClick={refreshAttendance}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {realTimeAttendance ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="text-center">
+                      <CardContent className="pt-6">
+                        <p className="text-sm text-muted-foreground mb-2">Clock In</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatTime24(realTimeAttendance.clockIn)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatDate(realTimeAttendance.clockIn)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="text-center">
+                      <CardContent className="pt-6">
+                        <p className="text-sm text-muted-foreground mb-2">Clock Out</p>
+                        <p className="text-2xl font-bold text-red-600">
+                          {realTimeAttendance.clockOut ? formatTime24(realTimeAttendance.clockOut) : 'Not logged out'}
+                        </p>
+                        {realTimeAttendance.clockOut && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDate(realTimeAttendance.clockOut)}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                    <Card className="text-center">
+                      <CardContent className="pt-6">
+                        <p className="text-sm text-muted-foreground mb-2">Total Hours</p>
+                        <p className="text-2xl font-bold text-blue-600 mb-2">
+                          {formatDuration(realTimeAttendance.totalHours)}
+                        </p>
+                        <Badge variant={realTimeAttendance.status === 'present' ? 'default' : 'secondary'}>
+                          {formatStatus(realTimeAttendance.status)}
+                        </Badge>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">Total Hours</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {formatDuration(realTimeAttendance.totalHours)}
-                    </p>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(realTimeAttendance.status)}`}>
-                      {formatStatus(realTimeAttendance.status)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No attendance record for today</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Calendar Tab */}
-        {activeTab === 'calendar' && (
-          <AttendanceCalendar userId={user?.id} />
-        )}
-
-        {/* History Tab */}
-        {activeTab === 'history' && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Attendance History</h2>
-            </div>
-            
-            {loading ? (
-              <div className="p-6 text-center">
-                <p className="text-gray-500">Loading...</p>
-              </div>
-            ) : attendanceHistory.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Clock In
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Clock Out
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total Hours
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {attendanceHistory.map((record) => (
-                        <tr key={record._id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(record.date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatTime24(record.clockIn)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {record.clockOut ? formatTime24(record.clockOut) : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDuration(record.totalHours)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                              {formatStatus(record.status)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="px-6 py-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        Page {currentPage} of {totalPages}
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => fetchAttendanceHistory(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => fetchAttendanceHistory(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No attendance record for today</p>
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="p-6 text-center">
-                <p className="text-gray-500">No attendance records found</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="calendar" className="space-y-6">
+            <AttendanceCalendar userId={user?.id} />
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance History</CardTitle>
+                <CardDescription>Your complete attendance records</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading...</p>
+                  </div>
+                ) : attendanceHistory.length > 0 ? (
+                  <>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Clock In</TableHead>
+                            <TableHead>Clock Out</TableHead>
+                            <TableHead>Total Hours</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {attendanceHistory.map((record) => (
+                            <TableRow key={record._id}>
+                              <TableCell className="font-medium">
+                                {formatDate(record.date)}
+                              </TableCell>
+                              <TableCell>{formatTime24(record.clockIn)}</TableCell>
+                              <TableCell>
+                                {record.clockOut ? formatTime24(record.clockOut) : '-'}
+                              </TableCell>
+                              <TableCell>{formatDuration(record.totalHours)}</TableCell>
+                              <TableCell>
+                                <Badge variant={record.status === 'present' ? 'default' : 'secondary'}>
+                                  {formatStatus(record.status)}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-sm text-muted-foreground">
+                          Page {currentPage} of {totalPages}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            onClick={() => fetchAttendanceHistory(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            onClick={() => fetchAttendanceHistory(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No attendance records found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="requests" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">Request Management</h2>
+                <p className="text-muted-foreground">Submit requests and track their status</p>
               </div>
-            )}
-          </div>
-        )}
+              <Button onClick={() => setShowRequestForm(true)}>
+                Create New Request
+              </Button>
+            </div>
+            <MyRequests />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Request Form Modal */}
+      <RequestForm
+        isOpen={showRequestForm}
+        onClose={() => setShowRequestForm(false)}
+        onSuccess={() => {
+          // Refresh requests if needed
+          setShowRequestForm(false);
+        }}
+      />
     </div>
   );
 };

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { attendanceAPI } from '../services/api';
 import { formatTime24, formatDate, formatDuration, formatDurationWithSeconds } from '../utils/helpers';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const UserSessionsList = () => {
   const [userSessions, setUserSessions] = useState([]);
@@ -79,145 +84,132 @@ const UserSessionsList = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          <span className="ml-2 text-gray-600">Loading user sessions...</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Loading user sessions...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={fetchUserSessions}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={fetchUserSessions} variant="outline">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200">
+    <Card>
+      <CardHeader>
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Live User Sessions</h2>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-            <span className="text-sm text-gray-600">Live Updates</span>
-            <button
-              onClick={fetchUserSessions}
-              className="ml-4 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Employee
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Login Time
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Session Duration
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Total Hours Today
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {userSessions.map((userSession) => (
-              <tr key={userSession.employee.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700">
-                          {userSession.employee.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {userSession.employee.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {userSession.employee.department} • {userSession.employee.position}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${
-                      userSession.session.isLoggedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-                    }`}></div>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(userSession.session.status)}`}>
-                      {formatStatus(userSession.session.status)}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {userSession.session.clockIn ? (
-                    <div>
-                      <div className="font-medium">{formatTime24(userSession.session.clockIn)}</div>
-                      <div className="text-xs text-gray-500">{formatDate(userSession.session.clockIn)}</div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">Not logged in</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {userSession.session.isLoggedIn ? (
-                    <div className="flex items-center">
-                      <span className="font-medium text-green-600">
-                        {calculateSessionDuration(userSession.session.clockIn)}
-                      </span>
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-2"></div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDuration(userSession.session.totalHours)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between text-sm text-gray-600">
           <div>
-            <span className="font-medium">{userSessions.filter(s => s.session.isLoggedIn).length}</span> active sessions
+            <CardTitle className="flex items-center gap-2">
+              Live User Sessions
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            </CardTitle>
+            <CardDescription>
+              Real-time monitoring of employee sessions
+            </CardDescription>
           </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+          <Button onClick={fetchUserSessions} variant="outline" size="sm">
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Login Time</TableHead>
+                <TableHead>Session Duration</TableHead>
+                <TableHead>Total Hours Today</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {userSessions.map((userSession) => (
+                <TableRow key={userSession.employee.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {userSession.employee.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{userSession.employee.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {userSession.employee.department} • {userSession.employee.position}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        userSession.session.isLoggedIn ? 'bg-green-500 animate-pulse' : 'bg-muted'
+                      }`}></div>
+                      <Badge variant={userSession.session.isLoggedIn ? "default" : "secondary"}>
+                        {formatStatus(userSession.session.status)}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {userSession.session.clockIn ? (
+                      <div>
+                        <div className="font-medium">{formatTime24(userSession.session.clockIn)}</div>
+                        <div className="text-xs text-muted-foreground">{formatDate(userSession.session.clockIn)}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Not logged in</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {userSession.session.isLoggedIn ? (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-green-600">
+                          {calculateSessionDuration(userSession.session.clockIn)}
+                        </span>
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">{formatDuration(userSession.session.totalHours)}</span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        
+        <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+          <div>
+            <span className="font-medium text-foreground">{userSessions.filter(s => s.session.isLoggedIn).length}</span> active sessions
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span>Auto-refresh every 30 seconds</span>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

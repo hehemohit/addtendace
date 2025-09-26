@@ -91,8 +91,18 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
+      
+      console.log('Attempting login with credentials:', { email: credentials.email });
+      
       const response = await authAPI.login(credentials);
+      console.log('Login response received:', response.data);
+      
       const { token, user, attendance, sessionInfo } = response.data;
+      
+      // Only clear and set new tokens after successful login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
       
       // Use session start time from backend if it's a continuation, otherwise use current time
       const loginTime = sessionInfo?.startTime || new Date().toISOString();
@@ -106,8 +116,11 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token, attendance, loginTime },
       });
 
+      console.log('Login successful, user data stored');
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
       dispatch({ type: 'SET_LOADING', payload: false });
       return {
         success: false,

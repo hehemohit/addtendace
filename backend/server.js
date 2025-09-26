@@ -7,6 +7,7 @@ const config = require('./config');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const attendanceRoutes = require('./routes/attendance');
+const requestRoutes = require('./routes/requests');
 
 const app = express();
 
@@ -23,6 +24,7 @@ mongoose.connect(config.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/requests', requestRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
